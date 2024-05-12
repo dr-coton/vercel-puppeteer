@@ -2,29 +2,37 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import puppeteer from 'puppeteer-core'
 
-type Json = {
-  message: string
-}
+const saveAsPdf = async (url: string) => {
+	const browser = await puppeteer.launch({
+		headless: true,  // false 일 경우 실행 시 웹사이트 확인 가능
+		args: ['--no-sandbox', '--disable-setuid-sandbox'],
+	});
+	const page = await browser.newPage();
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Json | Buffer>
-) {
-  const { url } = req.query;
+	await page.goto(url, {
+		waitUntil: 'networkidle0'
+	});
 
-  if (!url) {
-    return res
-      .status(400)
-      .json({ message: `A ?url query-parameter is required` })
-  }
+	const result = await page.pdf({
+		format: 'a4',
+		printBackground: true,
+		scale: 1.3,
+	});
+	await browser.close();
 
-  const browser = await puppeteer.connect({
-    browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.BLESS_TOKEN}`,
-  })
+	return result;
+};
 
-  const page = await browser.newPage()
-  await page.setViewport({ width: 1920, height: 1080 })
-  await page.goto(url)
+export default async (req: NextApiRequest, res: NextApiResponse) => {
+	const { url } = req.query; // pass the page to create PDF from as param
 
-  return res.status(200).send(await page.pdf())
-}
+	res.setHeader(
+		'Content-Disposition',
+		`attachment; filename="file.pdf"`
+	);
+	res.setHeader('Content-Type', 'application/pdf');
+
+	const pdf = await saveAsPdf(url as string);
+
+	return res.send(pdf);
+};
