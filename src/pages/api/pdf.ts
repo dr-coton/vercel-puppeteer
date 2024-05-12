@@ -10,11 +10,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Json | Buffer>
 ) {
-  const { searchParams } = new URL(
-    req.url as string,
-    `http://${req.headers.host}`
-  )
-  const url = searchParams.get('url')
+  const { url } = req.query;
 
   if (!url) {
     return res
