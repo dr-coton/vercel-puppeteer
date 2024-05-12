@@ -3,10 +3,9 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import puppeteer from 'puppeteer-core'
 
 const saveAsPdf = async (url: string) => {
-	const browser = await puppeteer.launch({
-		headless: true,  // false 일 경우 실행 시 웹사이트 확인 가능
-		args: ['--no-sandbox', '--disable-setuid-sandbox'],
-	});
+	 const browser = await puppeteer.connect({
+    browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.BLESS_TOKEN}`,
+  })
 	const page = await browser.newPage();
 
 	await page.goto(url, {
